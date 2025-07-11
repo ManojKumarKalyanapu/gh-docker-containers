@@ -11,17 +11,19 @@ jobs:
   test:
     environment: testing
     runs-on: ubuntu-latest
-    container:
-      image: node:16 # all steps in this job will run inside this container
+    # container:
+    #   image: node:16 # all steps in this job will run inside this container
     env:
       MONGODB_CONNECTION_PROTOCOL: mongodb # this is the protocol used to connect to MongoDB
-      MONGODB_CLUSTER_ADDRESS: mongodb # this is the service name defined below
+      MONGODB_CLUSTER_ADDRESS: 127.0.0.1:27017 # this is the service name defined below or use ip if is not running in a container
       MONGODB_USERNAME: root
       MONGODB_PASSWORD: example
       PORT: 8080
     services:
       mongodb:
         image: mongo
+        ports:
+          - 27017:27017 # expose the MongoDB service on port 27017
         env:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: example
