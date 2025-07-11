@@ -1,0 +1,131 @@
+What Are Containers in GitHub Actions?
+Containers allow you to run jobs or steps inside Docker images in GitHub Actions. This gives you:
+
+Custom runtime environments
+Pre-installed tools and dependencies
+Isolation across workflows
+
+Types of Container Usage:
+| Type                  | Description                                              | Example Keyword |
+| --------------------- | -------------------------------------------------------- | --------------- |
+| **Job Container**     | Runs the **entire job** inside a container               | `container:`    |
+| **Service Container** | Runs additional **supporting containers** like databases | `services:`     |
+
+1. Job Containers
+Run the entire job in a specified Docker image.
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: node:18
+    steps:
+      - run: node -v
+      - run: npm install
+
+| Key           | Description                                     |
+| ------------- | ----------------------------------------------- |
+| `image`       | Docker image (public or from GHCR/DockerHub)    |
+| `credentials` | Optional – authenticate with private registries |
+| `options`     | Pass runtime flags like `--user`, `--cap-add`   |
+
+Benefits of Job Containers:
+Fully controlled environment per job
+Reproducibility (same image = same result)
+Avoids polluting the GitHub-hosted runner
+
+2. Service Containers
+Used for databases, queues, or external services the job depends on.
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+    steps:
+      - run: psql -h localhost -U user -c "SELECT version();"
+        env:
+          PGPASSWORD: pass
+
+| Key     | Description                                |
+| ------- | ------------------------------------------ |
+| `image` | Docker image for the service container     |
+| `env`   | Environment variables inside the container |
+| `ports` | Expose container ports to the job          |
+
+Benefits of Job Containers:
+Fully controlled environment per job
+Reproducibility (same image = same result)
+Avoids polluting the GitHub-hosted runner
+
+2. Service Containers
+Used for databases, queues, or external services the job depends on.
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+    steps:
+      - run: psql -h localhost -U user -c "SELECT version();"
+        env:
+          PGPASSWORD: pass
+
+| Key     | Description                                |
+| ------- | ------------------------------------------ |
+| `image` | Docker image for the service container     |
+| `env`   | Environment variables inside the container |
+| `ports` | Expose container ports to the job          |
+
+These containers run in parallel with your job container or host, and can be accessed via localhost.
+
+| Limitation                                               | Notes                  |
+| -------------------------------------------------------- | ---------------------- |
+| No `container:` support for `windows` or `macos` runners | Only works on `ubuntu` |
+| Container images must support the job's architecture     | (e.g., amd64)          |
+| Service containers can't access host files               | Full isolation         |
+
+Best Practices:
+
+| Tip                                      | Why                                                |
+| ---------------------------------------- | -------------------------------------------------- |
+| Use small base images like `node:alpine` | Faster and lighter builds                          |
+| Pin image versions (e.g., `node:18`)     | Ensures stability                                  |
+| Avoid storing secrets inside containers  | Use GitHub `secrets` instead                       |
+| Use `healthcheck` for services           | Prevent jobs from starting before service is ready |
+
+Example: Full Job with Job + Service Container:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: node:18-alpine
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+    steps:
+      - run: npm ci
+      - run: npm test
+
+Summary:
+| Feature                 | Key            | Example                        |
+| ----------------------- | -------------- | ------------------------------ |
+| Job container           | `container:`   | Run job inside a Docker image  |
+| Service container       | `services:`    | Add PostgreSQL, Redis, etc.    |
+| DockerHub/public images | `image:`       | `node:18`, `python:3.11`, etc. |
+| Private registries      | `credentials:` | Use for internal images        |
+
